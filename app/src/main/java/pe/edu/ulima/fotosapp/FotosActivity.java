@@ -1,11 +1,13 @@
 package pe.edu.ulima.fotosapp;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.PersistableBundle;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
@@ -13,11 +15,19 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
+
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by sodm on 11/21/2016.
@@ -27,6 +37,8 @@ public class FotosActivity extends AppCompatActivity {
     private static final int REQUEST_IMAGE_CAPTURE = 100;
     private String mCurrentPhotoPath;
     ImageView iviFoto;
+    Handler handler = new Handler();
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,11 +48,54 @@ public class FotosActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         //metodo que se ejecuta despues de volver de algun activity
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK){
             redimensionarMostrarFoto();
+            new Thread(){
+                @Override
+                public void run() {
+                    subirCloudinary();
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(FotosActivity.this, "Transferencia finalizada", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }.start();
+        }
+    }
+
+    private void subirCloudinary(){
+        Map config = new HashMap<String,String>();
+        config.put("cloud_name","dtwnzaell");
+        config.put("api_key","998493122369621");
+        config.put("api_secret","aYynCfpGZpOKLgn_7kO3_7Avzx0");
+
+        Cloudinary cloudinary = new Cloudinary(config);
+        File photoFile = new File(mCurrentPhotoPath);
+
+        try {
+            FileInputStream is = new FileInputStream(photoFile);
+            String timestamp = String.valueOf(new Date().getTime());
+            //transferencia
+            cloudinary.uploader().upload(
+                    is,
+                    ObjectUtils.asMap("public_id",timestamp)
+            );
+            Log.i("FotosActivity",cloudinary.url().generate(timestamp));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

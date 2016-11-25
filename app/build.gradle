@@ -26,4 +26,7 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:24.2.1'
     testCompile 'junit:junit:4.12'
+    // https://mvnrepository.com/artifact/com.cloudinary/cloudinary-android
+    compile group: 'com.cloudinary', name: 'cloudinary-android', version: '1.4.6'
+
 }
